@@ -1,0 +1,132 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  // directUrl = env("DIRECT_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id                String   @id @default(cuid())
+  email             String   @unique
+  name              String?
+  password          String
+  role              Role     @default(CUSTOMER)
+  username          String?  @unique
+  employeeId        String?  @unique
+  governmentId      String?
+  workLocation      String?
+  shift             String?
+  twoFactorEnabled  Boolean  @default(false)
+  twoFactorSecret   String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  emailVerified     Boolean  @default(false)
+  verificationToken String?
+  country           String?
+  phone             String?
+  countryCode       String
+  parcels           Parcel[]
+  auctions          Auction[]
+  assignedTasks      Task[]
+  supplierShipments  Shipment[] @relation("SupplierShipments")
+  customerShipments  Shipment[] @relation("CustomerShipments")
+}
+
+model Parcel {
+  id              String   @id @default(cuid())
+  trackingNumber  String   @unique
+  status          Status
+  origin          String
+  destination     String
+  weight          Float
+  dimensions      String?
+  userId          String
+  user            User     @relation(fields: [userId], references: [id])
+  tasks           Task[]
+  shipment        Shipment? @relation(fields: [shipmentId], references: [id])
+  shipmentId      String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Auction {
+  id            String   @id @default(cuid())
+  title         String
+  description   String
+  startPrice    Float
+  currentPrice  Float
+  endTime       DateTime
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Task {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  status      TaskStatus
+  parcelId    String
+  parcel      Parcel   @relation(fields: [parcelId], references: [id])
+  assignedToId String?
+  assignedTo  User?    @relation(fields: [assignedToId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Shipment {
+  id              String   @id @default(cuid())
+  type            ShipmentType
+  status          ShipmentStatus
+  trackingNumber  String   @unique
+  supplierId      String?
+  supplier        User?    @relation("SupplierShipments", fields: [supplierId], references: [id])
+  customerId      String?
+  customer        User?    @relation("CustomerShipments", fields: [customerId], references: [id])
+  parcels         Parcel[]
+  expectedArrival DateTime?
+  shippedDate     DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+enum Role {
+  CUSTOMER
+  WAREHOUSE_STAFF
+  LOGISTICS_COORDINATOR
+  CENTER_ADMIN
+  SUPER_ADMIN
+}
+
+enum Status {
+  PENDING
+  PROCESSING
+  IN_TRANSIT
+  OUT_FOR_DELIVERY
+  DELIVERED
+  RETURNED
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+}
+
+enum ShipmentType {
+  INCOMING
+  OUTGOING
+}
+
+enum ShipmentStatus {
+  PROCESSING
+  IN_TRANSIT
+  ARRIVED
+  DELIVERED
+}
+
+
