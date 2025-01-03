@@ -23,14 +23,3 @@ export async function sendEmail(to: string, subject: string, html: string) {
   }
 }
 
-export interface ProcessEnv {
-  EMAIL_HOST: string;
-  EMAIL_PORT: string;
-  EMAIL_USER: string;
-  EMAIL_PASS: string;
-}
-
-
-
-export {}
-

@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { User, Package, CreditCard } from 'lucide-react'
+import { Bell, User, Package, CreditCard } from 'lucide-react'
 
 const notifications = [
   { id: 1, type: 'user', message: 'New user registered: John Doe', time: '2 minutes ago' },

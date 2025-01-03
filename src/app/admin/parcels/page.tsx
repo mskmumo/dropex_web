@@ -12,7 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { MoreHorizontal, ArrowUpDown } from 'lucide-react'
+import { MoreHorizontal, ArrowUpDown, ChevronDown } from 'lucide-react'
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 
@@ -25,7 +25,7 @@ const parcels = [
 
 export default function ParcelTracking() {
   const [searchTerm, setSearchTerm] = useState('')
-  const [sortColumn, setSortColumn] = useState<keyof typeof parcels[0] | ''>('')
+  const [sortColumn, setSortColumn] = useState('')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
   const [selectedParcel, setSelectedParcel] = useState(parcels[0])
 
@@ -42,7 +42,7 @@ export default function ParcelTracking() {
     return 0
   })
 
-  const handleSort = (column: keyof typeof parcels[0] | '') => {
+  const handleSort = (column: string) => {
     if (column === sortColumn) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
     } else {
@@ -66,33 +66,34 @@ export default function ParcelTracking() {
             />
           </div>
           <Table>
-            <thead>
-              <tr>
-                <th className="w-[100px]">ID</th>
-                <th>
+            <Table.Header>
+              <Table.Row>
+                <Table.Head className="w-[100px]">ID</Table.Head>
+                <Table.Head>
                   <Button variant="ghost" onClick={() => handleSort('trackingNumber')}>
                     Tracking Number <ArrowUpDown className="ml-2 h-4 w-4" />
                   </Button>
-                </th>
-                <th>
+                </Table.Head>
+                <Table.Head>
                   <Button variant="ghost" onClick={() => handleSort('status')}>
                     Status <ArrowUpDown className="ml-2 h-4 w-4" />
                   </Button>
-                </th>
-                <th>Origin</th>
-                <th>Destination</th>
-                <th className="text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
+                </Table.Head>
+                <Table.Head>Origin</Table.Head>
+                <Table.Head>Origin</Table.Head>
+                <Table.Head>Destination</Table.Head>
+                <Table.Head className="text-right">Actions</Table.Head>
+              </Table.Row>
+            </Table.Header>
+            <Table.Body>
               {sortedParcels.map((parcel) => (
-                <tr key={parcel.id} onClick={() => setSelectedParcel(parcel)} className="cursor-pointer">
-                  <td className="font-medium">{parcel.id}</td>
-                  <td>{parcel.trackingNumber}</td>
-                  <td>{parcel.status}</td>
-                  <td>{parcel.origin}</td>
-                  <td>{parcel.destination}</td>
-                  <td className="text-right">
+                <Table.Row key={parcel.id} onClick={() => setSelectedParcel(parcel)} className="cursor-pointer">
+                  <Table.Cell className="font-medium">{parcel.id}</Table.Cell>
+                  <Table.Cell>{parcel.trackingNumber}</Table.Cell>
+                  <Table.Cell>{parcel.status}</Table.Cell>
+                  <Table.Cell>{parcel.origin}</Table.Cell>
+                  <Table.Cell>{parcel.destination}</Table.Cell>
+                  <Table.Cell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" className="h-8 w-8 p-0">
@@ -111,18 +112,19 @@ export default function ParcelTracking() {
                         <DropdownMenuItem>Print label</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
-                  </td>
-                </tr>
+                  </Table.Cell>
+                </Table.Row>
               ))}
-            </tbody>
+            </Table.Body>
           </Table>
         </div>
         <div>
           <h2 className="text-xl font-semibold mb-4">Parcel Location</h2>
-          <div className="map-container">
+          <div style={{ height: '400px' }}>
             <MapContainer center={[selectedParcel.lat, selectedParcel.lng]} zoom={13} style={{ height: '100%', width: '100%' }}>
               <TileLayer
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               />
               <Marker position={[selectedParcel.lat, selectedParcel.lng]}>
                 <Popup>
@@ -137,13 +139,4 @@ export default function ParcelTracking() {
     </div>
   )
 }
-
-// prisma.ts
-import { PrismaClient } from '@prisma/client'
-
-const globalForPrisma = global as unknown as { prisma: PrismaClient }
-
-export const prisma = globalForPrisma.prisma || new PrismaClient()
-
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
 

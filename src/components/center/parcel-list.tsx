@@ -1,7 +1,7 @@
-'use client'
+"use client"
 
-import { useState } from 'react'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { useEffect, useState } from 'react'
+import { Table } from '@/components/ui/table'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { 
@@ -13,27 +13,65 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { MoreHorizontal, ArrowUpDown } from 'lucide-react'
+import { createClientSupabaseClient } from "@/lib/supabase"
 
-const parcels = [
-  { id: 1, trackingNumber: 'TRK001', status: 'In Transit', origin: 'New York', destination: 'Los Angeles' },
-  { id: 2, trackingNumber: 'TRK002', status: 'Delivered', origin: 'Chicago', destination: 'Houston' },
-  { id: 3, trackingNumber: 'TRK003', status: 'Processing', origin: 'Miami', destination: 'Seattle' },
-]
+interface Parcel {
+  id: number
+  tracking_number: string
+  status: string
+  origin: string
+  destination: string
+}
 
 export function ParcelList() {
+  const [parcels, setParcels] = useState<Parcel[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [sortColumn, setSortColumn] = useState('')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
+  const supabase = createClientSupabaseClient()
+
+  useEffect(() => {
+    const fetchParcels = async () => {
+      const { data, error } = await supabase
+        .from('parcels')
+        .select('*')
+      
+      if (error) {
+        console.error('Error fetching parcels:', error)
+      } else {
+        setParcels(data)
+      }
+    }
+
+    fetchParcels()
+
+    const subscription = supabase
+      .channel('parcels')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'parcels' }, payload => {
+        if (payload.eventType === 'INSERT') {
+          setParcels(current => [...current, payload.new as Parcel])
+        } else if (payload.eventType === 'UPDATE') {
+          setParcels(current => current.map(parcel => parcel.id === payload.new.id ? payload.new as Parcel : parcel))
+        } else if (payload.eventType === 'DELETE') {
+          setParcels(current => current.filter(parcel => parcel.id !== payload.old.id))
+        }
+      })
+      .subscribe()
+
+    return () => {
+      subscription.unsubscribe()
+    }
+  }, [supabase])
 
   const filteredParcels = parcels.filter(parcel => 
-    parcel.trackingNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    parcel.tracking_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
     parcel.status.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
   const sortedParcels = [...filteredParcels].sort((a, b) => {
     if (sortColumn) {
-      if (a[sortColumn as keyof typeof a] < b[sortColumn as keyof typeof b]) return sortDirection === 'asc' ? -1 : 1
-      if (a[sortColumn as keyof typeof a] > b[sortColumn as keyof typeof b]) return sortDirection === 'asc' ? 1 : -1
+      if (a[sortColumn] < b[sortColumn]) return sortDirection === 'asc' ? -1 : 1
+      if (a[sortColumn] > b[sortColumn]) return sortDirection === 'asc' ? 1 : -1
     }
     return 0
   })
@@ -59,33 +97,33 @@ export function ParcelList() {
         />
       </div>
       <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-[100px]">ID</TableHead>
-            <TableHead>
-              <Button variant="ghost" onClick={() => handleSort('trackingNumber')}>
+        <Table.Header>
+          <Table.Row>
+            <Table.Head className="w-[100px]">ID</Table.Head>
+            <Table.Head>
+              <Button variant="ghost" onClick={() => handleSort('tracking_number')}>
                 Tracking Number <ArrowUpDown className="ml-2 h-4 w-4" />
               </Button>
-            </TableHead>
-            <TableHead>
+            </Table.Head>
+            <Table.Head>
               <Button variant="ghost" onClick={() => handleSort('status')}>
                 Status <ArrowUpDown className="ml-2 h-4 w-4" />
               </Button>
-            </TableHead>
-            <TableHead>Origin</TableHead>
-            <TableHead>Destination</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
+            </Table.Head>
+            <Table.Head>Origin</Table.Head>
+            <Table.Head>Destination</Table.Head>
+            <Table.Head className="text-right">Actions</Table.Head>
+          </Table.Row>
+        </Table.Header>
+        <Table.Body>
           {sortedParcels.map((parcel) => (
-            <TableRow key={parcel.id}>
-              <TableCell className="font-medium">{parcel.id}</TableCell>
-              <TableCell>{parcel.trackingNumber}</TableCell>
-              <TableCell>{parcel.status}</TableCell>
-              <TableCell>{parcel.origin}</TableCell>
-              <TableCell>{parcel.destination}</TableCell>
-              <TableCell className="text-right">
+            <Table.Row key={parcel.id}>
+              <Table.Cell className="font-medium">{parcel.id}</Table.Cell>
+              <Table.Cell>{parcel.tracking_number}</Table.Cell>
+              <Table.Cell>{parcel.status}</Table.Cell>
+              <Table.Cell>{parcel.origin}</Table.Cell>
+              <Table.Cell>{parcel.destination}</Table.Cell>
+              <Table.Cell className="text-right">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="h-8 w-8 p-0">
@@ -104,10 +142,10 @@ export function ParcelList() {
                     <DropdownMenuItem>Assign task</DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-              </TableCell>
-            </TableRow>
+              </Table.Cell>
+            </Table.Row>
           ))}
-        </TableBody>
+        </Table.Body>
       </Table>
     </div>
   )

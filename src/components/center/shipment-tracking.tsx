@@ -1,6 +1,6 @@
-'use client'
+"use client"
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Table } from '@/components/ui/table'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -13,27 +13,62 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { MoreHorizontal, ArrowUpDown } from 'lucide-react'
+import { createClientSupabaseClient } from "@/lib/supabase"
 
-const shipments = {
-  incoming: [
-    { id: 1, trackingNumber: 'IN001', status: 'In Transit', supplier: 'Supplier A', expectedArrival: '2023-07-10' },
-    { id: 2, trackingNumber: 'IN002', status: 'Arrived', supplier: 'Supplier B', expectedArrival: '2023-07-09' },
-    { id: 3, trackingNumber: 'IN003', status: 'Delayed', supplier: 'Supplier C', expectedArrival: '2023-07-12' },
-  ],
-  outgoing: [
-    { id: 1, trackingNumber: 'OUT001', status: 'Shipped', customer: 'Customer X', shippedDate: '2023-07-08' },
-    { id: 2, trackingNumber: 'OUT002', status: 'Processing', customer: 'Customer Y', shippedDate: 'N/A' },
-    { id: 3, trackingNumber: 'OUT003', status: 'Delivered', customer: 'Customer Z', shippedDate: '2023-07-07' },
-  ],
+interface Shipment {
+  id: number
+  tracking_number: string
+  status: string
+  supplier: string
+  customer: string
+  expected_arrival: string
+  shipped_date: string
+  type: 'INCOMING' | 'OUTGOING'
 }
 
-export function ShipmentTracking({ type }: { type: 'incoming' | 'outgoing' }) {
+export function ShipmentTracking({ type }: { type: 'INCOMING' | 'OUTGOING' }) {
+  const [shipments, setShipments] = useState<Shipment[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [sortColumn, setSortColumn] = useState('')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
+  const supabase = createClientSupabaseClient()
 
-  const filteredShipments = shipments[type].filter(shipment => 
-    shipment.trackingNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  useEffect(() => {
+    const fetchShipments = async () => {
+      const { data, error } = await supabase
+        .from('shipments')
+        .select('*')
+        .eq('type', type)
+      
+      if (error) {
+        console.error('Error fetching shipments:', error)
+      } else {
+        setShipments(data)
+      }
+    }
+
+    fetchShipments()
+
+    const subscription = supabase
+      .channel('shipments')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'shipments' }, payload => {
+        if (payload.eventType === 'INSERT' && payload.new.type === type) {
+          setShipments(current => [...current, payload.new as Shipment])
+        } else if (payload.eventType === 'UPDATE' && payload.new.type === type) {
+          setShipments(current => current.map(shipment => shipment.id === payload.new.id ? payload.new as Shipment : shipment))
+        } else if (payload.eventType === 'DELETE') {
+          setShipments(current => current.filter(shipment => shipment.id !== payload.old.id))
+        }
+      })
+      .subscribe()
+
+    return () => {
+      subscription.unsubscribe()
+    }
+  }, [supabase, type])
+
+  const filteredShipments = shipments.filter(shipment => 
+    shipment.tracking_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
     shipment.status.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
@@ -59,7 +94,7 @@ export function ShipmentTracking({ type }: { type: 'incoming' | 'outgoing' }) {
       <div className="mb-4">
         <Input
           type="text"
-          placeholder={`Search ${type} shipments...`}
+          placeholder={`Search ${type.toLowerCase()} shipments...`}
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="max-w-sm"
@@ -70,7 +105,7 @@ export function ShipmentTracking({ type }: { type: 'incoming' | 'outgoing' }) {
           <Table.Row>
             <Table.Head className="w-[100px]">ID</Table.Head>
             <Table.Head>
-              <Button variant="ghost" onClick={() => handleSort('trackingNumber')}>
+              <Button variant="ghost" onClick={() => handleSort('tracking_number')}>
                 Tracking Number <ArrowUpDown className="ml-2 h-4 w-4" />
               </Button>
             </Table.Head>
@@ -80,10 +115,10 @@ export function ShipmentTracking({ type }: { type: 'incoming' | 'outgoing' }) {
               </Button>
             </Table.Head>
             <Table.Head>
-              {type === 'incoming' ? 'Supplier' : 'Customer'}
+              {type === 'INCOMING' ? 'Supplier' : 'Customer'}
             </Table.Head>
             <Table.Head>
-              {type === 'incoming' ? 'Expected Arrival' : 'Shipped Date'}
+              {type === 'INCOMING' ? 'Expected Arrival' : 'Shipped Date'}
             </Table.Head>
             <Table.Head className="text-right">Actions</Table.Head>
           </Table.Row>
@@ -92,10 +127,10 @@ export function ShipmentTracking({ type }: { type: 'incoming' | 'outgoing' }) {
           {sortedShipments.map((shipment) => (
             <Table.Row key={shipment.id}>
               <Table.Cell className="font-medium">{shipment.id}</Table.Cell>
-              <Table.Cell>{shipment.trackingNumber}</Table.Cell>
+              <Table.Cell>{shipment.tracking_number}</Table.Cell>
               <Table.Cell>{shipment.status}</Table.Cell>
-              <Table.Cell>{type === 'incoming' ? shipment.supplier : shipment.customer}</Table.Cell>
-              <Table.Cell>{type === 'incoming' ? shipment.expectedArrival : shipment.shippedDate}</Table.Cell>
+              <Table.Cell>{type === 'INCOMING' ? shipment.supplier : shipment.customer}</Table.Cell>
+              <Table.Cell>{type === 'INCOMING' ? shipment.expected_arrival : shipment.shipped_date}</Table.Cell>
               <Table.Cell className="text-right">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -112,8 +147,8 @@ export function ShipmentTracking({ type }: { type: 'incoming' | 'outgoing' }) {
                     <DropdownMenuSeparator />
                     <DropdownMenuItem>View details</DropdownMenuItem>
                     <DropdownMenuItem>Update status</DropdownMenuItem>
-                    {type === 'incoming' && <DropdownMenuItem>Mark as received</DropdownMenuItem>}
-                    {type === 'outgoing' && <DropdownMenuItem>Generate shipping label</DropdownMenuItem>}
+                    {type === 'INCOMING' && <DropdownMenuItem>Mark as received</DropdownMenuItem>}
+                    {type === 'OUTGOING' && <DropdownMenuItem>Generate shipping label</DropdownMenuItem>}
                   </DropdownMenuContent>
                 </DropdownMenu>
               </Table.Cell>

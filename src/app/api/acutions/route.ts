@@ -11,7 +11,7 @@ export async function GET(req: Request) {
 
   try {
     const { data, error } = await supabase
-      .from('shipments')
+      .from('auctions')
       .select('*')
       .eq('company_id', companyId)
 
@@ -19,8 +19,8 @@ export async function GET(req: Request) {
 
     return NextResponse.json(data)
   } catch (error) {
-    console.error('Error fetching shipments:', error)
-    return NextResponse.json({ error: 'Failed to fetch shipments' }, { status: 500 })
+    console.error('Error fetching auctions:', error)
+    return NextResponse.json({ error: 'Failed to fetch auctions' }, { status: 500 })
   }
 }
 
@@ -28,7 +28,7 @@ export async function POST(req: Request) {
   try {
     const body = await req.json()
     const { data, error } = await supabase
-      .from('shipments')
+      .from('auctions')
       .insert(body)
       .select()
 
@@ -36,8 +36,8 @@ export async function POST(req: Request) {
 
     return NextResponse.json(data)
   } catch (error) {
-    console.error('Error creating shipment:', error)
-    return NextResponse.json({ error: 'Failed to create shipment' }, { status: 500 })
+    console.error('Error creating auction:', error)
+    return NextResponse.json({ error: 'Failed to create auction' }, { status: 500 })
   }
 }
 
@@ -47,7 +47,7 @@ export async function PUT(req: Request) {
     const { id, ...updateData } = body
 
     const { data, error } = await supabase
-      .from('shipments')
+      .from('auctions')
       .update(updateData)
       .eq('id', id)
       .select()
@@ -56,8 +56,8 @@ export async function PUT(req: Request) {
 
     return NextResponse.json(data)
   } catch (error) {
-    console.error('Error updating shipment:', error)
-    return NextResponse.json({ error: 'Failed to update shipment' }, { status: 500 })
+    console.error('Error updating auction:', error)
+    return NextResponse.json({ error: 'Failed to update auction' }, { status: 500 })
   }
 }
 
@@ -66,21 +66,21 @@ export async function DELETE(req: Request) {
   const id = searchParams.get('id')
 
   if (!id) {
-    return NextResponse.json({ error: 'Shipment ID is required' }, { status: 400 })
+    return NextResponse.json({ error: 'Auction ID is required' }, { status: 400 })
   }
 
   try {
     const { error } = await supabase
-      .from('shipments')
+      .from('auctions')
       .delete()
       .eq('id', id)
 
     if (error) throw error
 
-    return NextResponse.json({ message: 'Shipment deleted successfully' })
+    return NextResponse.json({ message: 'Auction deleted successfully' })
   } catch (error) {
-    console.error('Error deleting shipment:', error)
-    return NextResponse.json({ error: 'Failed to delete shipment' }, { status: 500 })
+    console.error('Error deleting auction:', error)
+    return NextResponse.json({ error: 'Failed to delete auction' }, { status: 500 })
   }
 }
 

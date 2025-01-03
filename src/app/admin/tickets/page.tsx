@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Table } from '@/components/ui/table'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { 
@@ -23,8 +23,7 @@ const tickets = [
 
 export default function SupportTickets() {
   const [searchTerm, setSearchTerm] = useState('')
-  const [sortColumn, setSortColumn] = useState<keyof typeof tickets[0] | ''>('')
-    // const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
+  const [sortColumn, setSortColumn] = useState('')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
 
   const filteredTickets = tickets.filter(ticket => 
@@ -63,47 +62,47 @@ export default function SupportTickets() {
         />
       </div>
       <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-[100px]">ID</TableHead>
-            <TableHead>
+        <Table.Header>
+          <Table.Row>
+            <Table.Head className="w-[100px]">ID</Table.Head>
+            <Table.Head>
               <Button variant="ghost" onClick={() => handleSort('user')}>
                 User <ArrowUpDown className="ml-2 h-4 w-4" />
               </Button>
-            </TableHead>
-            <TableHead>
+            </Table.Head>
+            <Table.Head>
               <Button variant="ghost" onClick={() => handleSort('subject')}>
                 Subject <ArrowUpDown className="ml-2 h-4 w-4" />
               </Button>
-            </TableHead>
-            <TableHead>
+            </Table.Head>
+            <Table.Head>
               <Button variant="ghost" onClick={() => handleSort('status')}>
                 Status <ArrowUpDown className="ml-2 h-4 w-4" />
               </Button>
-            </TableHead>
-            <TableHead>
+            </Table.Head>
+            <Table.Head>
               <Button variant="ghost" onClick={() => handleSort('priority')}>
                 Priority <ArrowUpDown className="ml-2 h-4 w-4" />
               </Button>
-            </TableHead>
-            <TableHead>
+            </Table.Head>
+            <Table.Head>
               <Button variant="ghost" onClick={() => handleSort('createdAt')}>
                 Created At <ArrowUpDown className="ml-2 h-4 w-4" />
               </Button>
-            </TableHead>
-            <TableHead className="text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
+            </Table.Head>
+            <Table.Head className="text-right">Actions</Table.Head>
+          </Table.Row>
+        </Table.Header>
+        <Table.Body>
           {sortedTickets.map((ticket) => (
-            <TableRow key={ticket.id}>
-              <TableCell className="font-medium">{ticket.id}</TableCell>
-              <TableCell>{ticket.user}</TableCell>
-              <TableCell>{ticket.subject}</TableCell>
-              <TableCell>{ticket.status}</TableCell>
-              <TableCell>{ticket.priority}</TableCell>
-              <TableCell>{ticket.createdAt}</TableCell>
-              <TableCell className="text-right">
+            <Table.Row key={ticket.id}>
+              <Table.Cell className="font-medium">{ticket.id}</Table.Cell>
+              <Table.Cell>{ticket.user}</Table.Cell>
+              <Table.Cell>{ticket.subject}</Table.Cell>
+              <Table.Cell>{ticket.status}</Table.Cell>
+              <Table.Cell>{ticket.priority}</Table.Cell>
+              <Table.Cell>{ticket.createdAt}</Table.Cell>
+              <Table.Cell className="text-right">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="h-8 w-8 p-0">
@@ -123,10 +122,10 @@ export default function SupportTickets() {
                     <DropdownMenuItem>Close ticket</DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-              </TableCell>
-            </TableRow>
+              </Table.Cell>
+            </Table.Row>
           ))}
-        </TableBody>
+        </Table.Body>
       </Table>
     </div>
   )

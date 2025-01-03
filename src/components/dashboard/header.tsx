@@ -1,35 +1,30 @@
-"use client";
-
-import { Bell, User } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { createBrowserClient } from "@supabase/ssr";
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { User as SupabaseUser } from "@supabase/supabase-js";
+import { Bell, User } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { createBrowserClient } from '@supabase/ssr'
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 
 const supabase = createBrowserClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+)
 
 export function Header() {
-  const [user, setUser] = useState<SupabaseUser | null>(null);
-  const router = useRouter();
+  const [user, setUser] = useState(null)
+  const router = useRouter()
 
   useEffect(() => {
     const fetchUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      setUser(user);
-    };
-    fetchUser();
-  }, []);
+      const { data: { user } } = await supabase.auth.getUser()
+      setUser(user)
+    }
+    fetchUser()
+  }, [])
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    router.push("/login");
-  };
+    await supabase.auth.signOut()
+    router.push('/login')
+  }
 
   return (
     <header className="bg-white shadow-md py-4 px-4 flex justify-between items-center">
@@ -52,5 +47,6 @@ export function Header() {
         )}
       </div>
     </header>
-  );
+  )
 }
+

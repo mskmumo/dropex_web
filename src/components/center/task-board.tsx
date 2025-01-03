@@ -1,27 +1,60 @@
-'use client'
+"use client"
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Draggable, Droppable, DragDropContext } from 'react-beautiful-dnd'
+import { createClientSupabaseClient } from "@/lib/supabase"
 
-const initialTasks = {
-  todo: [
-    { id: 't1', content: 'Pick item from warehouse' },
-    { id: 't2', content: 'Package for shipping' },
-  ],
-  inProgress: [
-    { id: 't3', content: 'Check parcel status' },
-  ],
-  done: [
-    { id: 't4', content: 'Update inventory' },
-  ],
+interface Task {
+  id: string
+  title: string
+  status: 'TODO' | 'IN_PROGRESS' | 'DONE'
 }
 
 export function TaskBoard() {
-  const [tasks, setTasks] = useState(initialTasks)
+  const [tasks, setTasks] = useState<{ [key: string]: Task[] }>({
+    TODO: [],
+    IN_PROGRESS: [],
+    DONE: [],
+  })
+  const supabase = createClientSupabaseClient()
 
-  const onDragEnd = (result) => {
+  useEffect(() => {
+    const fetchTasks = async () => {
+      const { data, error } = await supabase
+        .from('tasks')
+        .select('*')
+      
+      if (error) {
+        console.error('Error fetching tasks:', error)
+      } else {
+        const groupedTasks = data.reduce((acc, task) => {
+          if (!acc[task.status]) {
+            acc[task.status] = []
+          }
+          acc[task.status].push(task)
+          return acc
+        }, {} as { [key: string]: Task[] })
+        setTasks(groupedTasks)
+      }
+    }
+
+    fetchTasks()
+
+    const subscription = supabase
+      .channel('tasks')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, payload => {
+        fetchTasks()
+      })
+      .subscribe()
+
+    return () => {
+      subscription.unsubscribe()
+    }
+  }, [supabase])
+
+  const onDragEnd = async (result) => {
     const { source, destination } = result
     if (!destination) return
 
@@ -35,21 +68,31 @@ export function TaskBoard() {
       [source.droppableId]: sourceColumn,
       [destination.droppableId]: destColumn,
     })
+
+    // Update task status in Supabase
+    const { error } = await supabase
+      .from('tasks')
+      .update({ status: destination.droppableId })
+      .eq('id', removed.id)
+
+    if (error) {
+      console.error('Error updating task status:', error)
+    }
   }
 
   return (
     <DragDropContext onDragEnd={onDragEnd}>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {Object.entries(tasks).map(([columnId, tasks]) => (
+        {Object.entries(tasks).map(([columnId, columnTasks]) => (
           <Card key={columnId} className="bg-blue-100">
             <CardHeader>
-              <CardTitle className="text-blue-900">{columnId.charAt(0).toUpperCase() + columnId.slice(1)}</CardTitle>
+              <CardTitle className="text-blue-900">{columnId}</CardTitle>
             </CardHeader>
             <CardContent>
               <Droppable droppableId={columnId}>
                 {(provided) => (
                   <div {...provided.droppableProps} ref={provided.innerRef}>
-                    {tasks.map((task, index) => (
+                    {columnTasks.map((task, index) => (
                       <Draggable key={task.id} draggableId={task.id} index={index}>
                         {(provided) => (
                           <div
@@ -58,7 +101,7 @@ export function TaskBoard() {
                             {...provided.dragHandleProps}
                             className="bg-white p-2 mb-2 rounded shadow"
                           >
-                            {task.content}
+                            {task.title}
                           </div>
                         )}
                       </Draggable>

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Table } from '@/components/ui/table'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { 
@@ -13,7 +13,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { MoreHorizontal, ArrowUpDown, ChevronDown } from 'lucide-react'
-import 'leaflet/dist/leaflet.css'
 
 const users = [
   { id: 1, name: 'John Doe', email: 'john@example.com', role: 'User', status: 'Active' },
@@ -62,41 +61,41 @@ export default function UserManagement() {
         />
       </div>
       <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-[100px]">ID</TableHead>
-            <TableHead>
+        <Table.Header>
+          <Table.Row>
+            <Table.Head className="w-[100px]">ID</Table.Head>
+            <Table.Head>
               <Button variant="ghost" onClick={() => handleSort('name')}>
                 Name <ArrowUpDown className="ml-2 h-4 w-4" />
               </Button>
-            </TableHead>
-            <TableHead>
+            </Table.Head>
+            <Table.Head>
               <Button variant="ghost" onClick={() => handleSort('email')}>
                 Email <ArrowUpDown className="ml-2 h-4 w-4" />
               </Button>
-            </TableHead>
-            <TableHead>
+            </Table.Head>
+            <Table.Head>
               <Button variant="ghost" onClick={() => handleSort('role')}>
                 Role <ArrowUpDown className="ml-2 h-4 w-4" />
               </Button>
-            </TableHead>
-            <TableHead>
+            </Table.Head>
+            <Table.Head>
               <Button variant="ghost" onClick={() => handleSort('status')}>
                 Status <ArrowUpDown className="ml-2 h-4 w-4" />
               </Button>
-            </TableHead>
-            <TableHead className="text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
+            </Table.Head>
+            <Table.Head className="text-right">Actions</Table.Head>
+          </Table.Row>
+        </Table.Header>
+        <Table.Body>
           {sortedUsers.map((user) => (
-            <TableRow key={user.id}>
-              <TableCell className="font-medium">{user.id}</TableCell>
-              <TableCell>{user.name}</TableCell>
-              <TableCell>{user.email}</TableCell>
-              <TableCell>{user.role}</TableCell>
-              <TableCell>{user.status}</TableCell>
-              <TableCell className="text-right">
+            <Table.Row key={user.id}>
+              <Table.Cell className="font-medium">{user.id}</Table.Cell>
+              <Table.Cell>{user.name}</Table.Cell>
+              <Table.Cell>{user.email}</Table.Cell>
+              <Table.Cell>{user.role}</Table.Cell>
+              <Table.Cell>{user.status}</Table.Cell>
+              <Table.Cell className="text-right">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="h-8 w-8 p-0">
@@ -115,10 +114,10 @@ export default function UserManagement() {
                     <DropdownMenuItem>Delete user</DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-              </TableCell>
-            </TableRow>
+              </Table.Cell>
+            </Table.Row>
           ))}
-        </TableBody>
+        </Table.Body>
       </Table>
     </div>
   )

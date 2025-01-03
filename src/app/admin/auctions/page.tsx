@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { Table } from '@/components/ui/table'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { 
@@ -11,91 +12,41 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { MoreHorizontal, ArrowUpDown } from 'lucide-react'
-import { 
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow
-} from "@/components/ui/table";
+import { MoreHorizontal, ArrowUpDown, ChevronDown } from 'lucide-react'
 
-
-
-interface Auction {
-  id: number;
-  title: string;
-  seller: string;
-  description: string;
-  startDate: string;
-  endDate: string;
-  status: string;
-  currentPrice: number;
-  endTime: string;
-  [key: string]: unknown;
-}
-const auctions: Auction[] = [
-  {
-    id: 1, title: 'Vintage Watch', seller: 'John Doe', currentBid: '$500.00', status: 'Active',
-    description: '',
-    endDate: '',
-    endTime: '2023-07-10 15:00:00',
-    currentPrice: 0,
-    startDate: ''
-  },
-  {
-    id: 2, title: 'Antique Vase', seller: 'Jane Smith', currentBid: '$300.00', status: 'Pending',
-    description: '',
-    startDate: '',
-    endDate: '',
-    endTime: '2023-07-11 12:00:00',
-    currentPrice: 0
-  },
-  {
-    id: 3,
-    title: 'Rare Coin',
-    seller: 'Bob Johnson',
-    currentBid: '$1000.00',
-    status: 'Ended',
-    description: 'Rare collectible coin',
-    startDate: '2023-07-08',
-    endDate: '2023-07-09',
-    endTime: '2023-07-09 18:00:00',
-    currentPrice: 1000
+const auctions = [
+  { id: 1, title: 'Vintage Watch', seller: 'John Doe', currentBid: '$500.00', endTime: '2023-07-10 15:00:00', status: 'Active' },
+  { id: 2, title: 'Antique Vase', seller: 'Jane Smith', currentBid: '$300.00', endTime: '2023-07-11 12:00:00', status: 'Pending' },
+  { id: 3, title: 'Rare Coin', seller: 'Bob Johnson', currentBid: '$1000.00', endTime: '2023-07-09 18:00:00', status: 'Ended' },
   // Add more auction data as needed
-  }
-];
+]
 
 export default function AuctionManagement() {
   const [searchTerm, setSearchTerm] = useState('')
-  const [sortColumn, setSortColumn] = useState<keyof Auction>('title');
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [sortColumn, setSortColumn] = useState('')
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
+
   const filteredAuctions = auctions.filter(auction => 
     auction.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     auction.seller.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
-  const sortAuctions = (auctions: Auction[]) => {
-    return [...auctions].sort((a: Auction, b: Auction) => {
-      const aValue = a[sortColumn];
-      const bValue = b[sortColumn];
-      
-      if (sortDirection === 'asc') {
-        return (aValue as string | number) > (bValue as string | number) ? 1 : -1;
-      }
-      return (aValue as string | number) < (bValue as string | number) ? 1 : -1;
-    });
-  };
-
-  const handleSort = (column: keyof Auction) => {
-    if (sortColumn === column) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortColumn(column);
-      setSortDirection('asc');
+  const sortedAuctions = [...filteredAuctions].sort((a, b) => {
+    if (sortColumn) {
+      if (a[sortColumn] < b[sortColumn]) return sortDirection === 'asc' ? -1 : 1
+      if (a[sortColumn] > b[sortColumn]) return sortDirection === 'asc' ? 1 : -1
     }
-  };
+    return 0
+  })
+
+  const handleSort = (column: string) => {
+    if (column === sortColumn) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortColumn(column)
+      setSortDirection('asc')
+    }
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -110,47 +61,47 @@ export default function AuctionManagement() {
         />
       </div>
       <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-[100px]">ID</TableHead>
-            <TableHead>
+        <Table.Header>
+          <Table.Row>
+            <Table.Head className="w-[100px]">ID</Table.Head>
+            <Table.Head>
               <Button variant="ghost" onClick={() => handleSort('title')}>
                 Title <ArrowUpDown className="ml-2 h-4 w-4" />
               </Button>
-            </TableHead>
-            <TableHead>
+            </Table.Head>
+            <Table.Head>
               <Button variant="ghost" onClick={() => handleSort('seller')}>
                 Seller <ArrowUpDown className="ml-2 h-4 w-4" />
               </Button>
-            </TableHead>
-            <TableHead>
+            </Table.Head>
+            <Table.Head>
               <Button variant="ghost" onClick={() => handleSort('currentBid')}>
                 Current Bid <ArrowUpDown className="ml-2 h-4 w-4" />
               </Button>
-            </TableHead>
-            <TableHead>
+            </Table.Head>
+            <Table.Head>
               <Button variant="ghost" onClick={() => handleSort('endTime')}>
                 End Time <ArrowUpDown className="ml-2 h-4 w-4" />
               </Button>
-            </TableHead>
-            <TableHead>
+            </Table.Head>
+            <Table.Head>
               <Button variant="ghost" onClick={() => handleSort('status')}>
                 Status <ArrowUpDown className="ml-2 h-4 w-4" />
               </Button>
-            </TableHead>
-            <TableHead className="text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {sortAuctions(filteredAuctions).map((auction: Auction) => (
-            <TableRow key={auction.id}>
-              <TableCell className="font-medium">{auction.id}</TableCell>
-              <TableCell>{auction.title}</TableCell>
-              <TableCell>{auction.seller}</TableCell>
-              <TableCell>{auction.currentBid as string}</TableCell>
-              <TableCell>{auction.endTime}</TableCell>
-              <TableCell>{auction.status}</TableCell>
-              <TableCell className="text-right">
+            </Table.Head>
+            <Table.Head className="text-right">Actions</Table.Head>
+          </Table.Row>
+        </Table.Header>
+        <Table.Body>
+          {sortedAuctions.map((auction) => (
+            <Table.Row key={auction.id}>
+              <Table.Cell className="font-medium">{auction.id}</Table.Cell>
+              <Table.Cell>{auction.title}</Table.Cell>
+              <Table.Cell>{auction.seller}</Table.Cell>
+              <Table.Cell>{auction.currentBid}</Table.Cell>
+              <Table.Cell>{auction.endTime}</Table.Cell>
+              <Table.Cell>{auction.status}</Table.Cell>
+              <Table.Cell className="text-right">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="h-8 w-8 p-0">
@@ -169,10 +120,10 @@ export default function AuctionManagement() {
                     <DropdownMenuItem>End auction</DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-              </TableCell>
-            </TableRow>
+              </Table.Cell>
+            </Table.Row>
           ))}
-        </TableBody>
+        </Table.Body>
       </Table>
     </div>
   )

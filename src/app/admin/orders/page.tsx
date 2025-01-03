@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Table } from '@/components/ui/table'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { 
@@ -61,41 +61,41 @@ export default function OrderManagement() {
         />
       </div>
       <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-[100px]">ID</TableHead>
-            <TableHead>
+        <Table.Header>
+          <Table.Row>
+            <Table.Head className="w-[100px]">ID</Table.Head>
+            <Table.Head>
               <Button variant="ghost" onClick={() => handleSort('user')}>
                 User <ArrowUpDown className="ml-2 h-4 w-4" />
               </Button>
-            </TableHead>
-            <TableHead>
+            </Table.Head>
+            <Table.Head>
               <Button variant="ghost" onClick={() => handleSort('status')}>
                 Status <ArrowUpDown className="ml-2 h-4 w-4" />
               </Button>
-            </TableHead>
-            <TableHead>
+            </Table.Head>
+            <Table.Head>
               <Button variant="ghost" onClick={() => handleSort('total')}>
                 Total <ArrowUpDown className="ml-2 h-4 w-4" />
               </Button>
-            </TableHead>
-            <TableHead>
+            </Table.Head>
+            <Table.Head>
               <Button variant="ghost" onClick={() => handleSort('date')}>
                 Date <ArrowUpDown className="ml-2 h-4 w-4" />
               </Button>
-            </TableHead>
-            <TableHead className="text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
+            </Table.Head>
+            <Table.Head className="text-right">Actions</Table.Head>
+          </Table.Row>
+        </Table.Header>
+        <Table.Body>
           {sortedOrders.map((order) => (
-            <TableRow key={order.id}>
-              <TableCell className="font-medium">{order.id}</TableCell>
-              <TableCell>{order.user}</TableCell>
-              <TableCell>{order.status}</TableCell>
-              <TableCell>{order.total}</TableCell>
-              <TableCell>{order.date}</TableCell>
-              <TableCell className="text-right">
+            <Table.Row key={order.id}>
+              <Table.Cell className="font-medium">{order.id}</Table.Cell>
+              <Table.Cell>{order.user}</Table.Cell>
+              <Table.Cell>{order.status}</Table.Cell>
+              <Table.Cell>{order.total}</Table.Cell>
+              <Table.Cell>{order.date}</Table.Cell>
+              <Table.Cell className="text-right">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="h-8 w-8 p-0">
@@ -114,10 +114,10 @@ export default function OrderManagement() {
                     <DropdownMenuItem>Cancel order</DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-              </TableCell>
-            </TableRow>
+              </Table.Cell>
+            </Table.Row>
           ))}
-        </TableBody>
+        </Table.Body>
       </Table>
     </div>
   )

@@ -1,18 +1,36 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+// import { Input } from '@/components/ui/input'
+// import { Label } from '@/components/ui/label'
 import { ParcelList } from '@/components/center/parcel-list'
 import { TaskBoard } from '@/components/center/task-board'
+import { getUserRole } from '../api/auth/get-user-role/route'
 import { ShipmentTracking } from '@/components/center/shipment-tracking'
 import { OverviewSection } from '@/components/center/overview-section'
 import { ProfileSection } from '@/components/center/profile-section'
+import { redirect } from 'next/navigation'
 
 export default function CenterDashboard() {
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      try {
+        const role = await getUserRole()
+
+        if (role !== 'CENTER_USER') {
+          redirect('/')
+        }
+      } catch (error) {
+        console.error('Failed to fetch user role:', error)
+      }
+    }
+
+    fetchUserRole()
+  }, [])
+
   const [activeTab, setActiveTab] = useState('parcels')
 
   return (
@@ -41,32 +59,10 @@ export default function CenterDashboard() {
           <TaskBoard />
         </TabsContent>
         <TabsContent value="incoming">
-          <ShipmentTracking type="incoming" />
+          <ShipmentTracking type="INCOMING" />
         </TabsContent>
         <TabsContent value="outgoing">
-          <ShipmentTracking type="outgoing" />
-        </TabsContent>
-        <TabsContent value="inventory" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Inventory Management</CardTitle>
-              <CardDescription>Track and manage center inventory</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {/* Add inventory management components here */}
-            </CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="staff" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Staff Management</CardTitle>
-              <CardDescription>Manage center staff and assignments</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {/* Add staff management components here */}
-            </CardContent>
-          </Card>
+          <ShipmentTracking type="OUTGOING" />
         </TabsContent>
       </Tabs>
 
@@ -76,7 +72,7 @@ export default function CenterDashboard() {
           <CardDescription>Update your personal information and settings</CardDescription>
         </CardHeader>
         <CardContent>
-          {/* <ProfileSection user={user} /> */}
+          <ProfileSection user={undefined} />
         </CardContent>
       </Card>
     </div>

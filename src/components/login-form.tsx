@@ -1,9 +1,11 @@
-// "use client"
 
-// import { useState } from 'react'
+
+// "use client";
+
+// import React, { useState } from 'react';
 // import { useRouter } from 'next/navigation'
-// import { zodResolver } from "@hookform/resolvers/zod"
 // import { useForm } from "react-hook-form"
+// import { zodResolver } from "@hookform/resolvers/zod"
 // import * as z from "zod"
 // import { Button } from "@/components/ui/button"
 // import {
@@ -15,10 +17,13 @@
 //   FormMessage,
 // } from "@/components/ui/form"
 // import { Input } from "@/components/ui/input"
-// import { loginUser } from "@/app/login/action";
+// // import { loginUser } from "../app/login/action"
 // import { toast } from "@/hooks/use-toast"
 // import Link from 'next/link'
-// import GoogleSignin from '@/app/login/GoogleSignin'
+// // import GoogleSignin from '../app/login/GoogleSignin'
+// import { FcGoogle } from 'react-icons/fc'
+// // import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+// import { createClient } from '@/lib/supabase/client'
 
 // const loginSchema = z.object({
 //   email: z.string().email({
@@ -32,7 +37,8 @@
 // export function LoginForm() {
 //   const router = useRouter()
 //   const [isLoading, setIsLoading] = useState(false)
-//   const [serverError, setServerError] = useState<string | null>(null)
+//   // const supabase = createClientComponentClient()
+//   const supabase = createClient()
 
 //   const form = useForm<z.infer<typeof loginSchema>>({
 //     resolver: zodResolver(loginSchema),
@@ -42,39 +48,44 @@
 //     },
 //   })
 
-//   const onSubmit=async (values: z.infer<typeof loginSchema>) => {
-//     setServerError(null);
+//   async function onSubmit(values: z.infer<typeof loginSchema>) {
 //     setIsLoading(true)
+//     setServerError(null)
 //     try {
-//       const response = await loginUser({
+//       const { error } = await supabase.auth.signInWithPassword({
 //         email: values.email,
 //         password: values.password,
-//       });
+//       })
 
-//       const data = response as { success: boolean; message?: string; user: { id: unknown; email: unknown; role: string } } | { error: boolean; message: unknown }
+//       if (error) {
+//         setServerError(error.message)
+//         setIsLoading(false)
+//         return
+//       }
 
-//       if ('success' in data && data.success) {
-//         toast({
-//           title: "Logged in successfully",
-//           description: "Redirecting to dashboard...",
-//         })
-        
-//         // Redirect based on user role
-//         const role = data.user.role;
-//         switch (role) {
-//           case 'SUPER_ADMIN':
-//             router.push('/admin')
-//             break
-//           case 'CENTER_ADMIN':
-//           case 'WAREHOUSE_STAFF':
-//           case 'LOGISTICS_COORDINATOR':
-//             router.push('/center')
-//             break
-//           default:
-//             router.push('/dashboard')
-//         }
-//       } else {
-//         throw new Error(typeof data.message === 'string' ? data.message : 'An error occurred during login')
+//       // Fetch user role
+//       const roleResponse = await fetch('/api/auth/get-user-role')
+//       const { role } = await roleResponse.json()
+
+//       if (!role) throw new Error('User role not found')
+
+//       toast({
+//         title: "Logged in successfully",
+//         description: "Redirecting to dashboard...",
+//       })
+      
+//       // Redirect based on user role
+//       switch (role) {
+//         case 'ADMIN':
+//           router.push('/admin')
+//           break
+//         case 'CENTER':
+//           router.push('/center')
+//           break
+//         case 'USER':
+//         default:
+//           router.push('/dashboard')
+//           break
 //       }
 //     } catch (error) {
 //       toast({
@@ -87,68 +98,91 @@
 //     }
 //   }
 
+//   const handleGoogleSignIn = async () => {
+//     try {
+//       const { error } = await supabase.auth.signInWithOAuth({
+//         provider: 'google',
+//       })
+//       if (error) throw error
+//       // Note: After Google sign-in, the user will be redirected back to the app
+//       // You'll need to handle the redirect in your app to check the user's role and redirect accordingly
+//     } catch (error) {
+//       toast({
+//         title: "Error",
+//         description: error instanceof Error ? error.message : "An unexpected error occurred",
+//         variant: "destructive",
+//       })
+//     }
+//   }
 //   return (
-//     <div className="w-full max-w-md mx-auto">
-//       <Form {...form}>
-//         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-//           <FormField
-//             control={form.control}
-//             name="email"
-//             render={({ field }) => (
-//               <FormItem>
-//                 <FormLabel className="text-navy-600">Email</FormLabel>
-//                 <FormControl>
-//                   <Input placeholder="Enter your email" {...field} className="border-navy-300 focus:border-navy-500" />
-//                 </FormControl>
-//                 <FormMessage />
-//               </FormItem>
-//             )}
-//           />
-//           <FormField
-//             control={form.control}
-//             name="password"
-//             render={({ field }) => (
-//               <FormItem>
-//                 <FormLabel className="text-navy-600">Password</FormLabel>
-//                 <FormControl>
-//                   <Input type="password" placeholder="Enter your password" {...field} className="border-navy-300 focus:border-navy-500" />
-//                 </FormControl>
-//                 <FormMessage />
-//               </FormItem>
-//             )}
-            
-//           />
-//           {serverError && (
-//             <p className="text-red-500 text-sm mt-2">{serverError}</p>
+//     <Form {...form}>
+//       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+//         <FormField
+//           control={form.control}
+//           name="email"
+//           render={({ field }) => (
+//             <FormItem>
+//               <FormLabel className="text-gray-700">Email</FormLabel>
+//               <FormControl>
+//                 <Input placeholder="Email" {...field} className="bg-white" />
+//               </FormControl>
+//               <FormMessage />
+//             </FormItem>
 //           )}
-          
-//           <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white" disabled={isLoading}>
-//             {isLoading ? (
-//               <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-//             ) : (
-//               'Log in'
-//             )}
-//           </Button>
-//           <GoogleSignin />
-//         </form>
-//       </Form>
-//       <div className="mt-4 text-center">
-//         <Link href="/register" className="text-sm text-navy-600 hover:underline">
-//           Don&apos;t have an account? Register here
-//         </Link>
-//         <div className="text-muted-foreground text-sm">
-//             Forgot password?{" "}
-//             <Link
-//               href={`/forgot-password${
-//                 form.getValues("email") ? `?email=${encodeURIComponent(form.getValues("email"))}` : ""
-//               }`}
-//               className="underline"
-//             >
-//               Reset my password
-//             </Link>
-//           </div>
+//         />
+//         <FormField
+//           control={form.control}
+//           name="password"
+//           render={({ field }) => (
+//             <FormItem>
+//               <FormLabel className="text-gray-700">Password</FormLabel>
+//               <FormControl>
+//                 <Input type="password" placeholder="Password" {...field} className="bg-white" />
+//               </FormControl>
+//               <FormMessage />
+//             </FormItem>
+//           )}
+//         />
+    
+    
+//         <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white" disabled={isLoading}>
+//           {isLoading ? "Logging in..." : "Login"}
+//         </Button>
+//         {/* <GoogleSignin /> */}
+//         <div className="mt-4">
+//         <Button
+//           type="button"
+//           variant="outline"
+//           onClick={handleGoogleSignIn}
+//           className="w-full"
+//         >
+//           <FcGoogle className="w-5 h-5 mr-2" />
+//           Sign in with Google
+//         </Button>
 //       </div>
-//     </div>
+//       </form>
+//       <div className="mt-6 text-center">
+//         <p className="text-gray-600">
+//           Don&apos;t have an account?{' '}
+//           <Link href="/register" className="text-blue-600 hover:underline font-medium">
+//             Register
+//           </Link>
+//         </p>
+//       </div>
+//       <div className="mt-2 text-center">
+//         <span className="text-gray-600 text-sm">
+//           Forgot password?{' '}
+//           <Link
+//             href={`/forgot-password${
+//               form.getValues("email") ? `?email=${encodeURIComponent(form.getValues("email"))}` : ""
+//             }`}
+//             className="text-blue-600 hover:underline font-medium"
+//           >
+//             Reset my password
+//           </Link>
+//         </span>
+//       </div>
+//     </Form>
 //   )
 // }
 
@@ -156,7 +190,7 @@
 
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation'
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -171,21 +205,25 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import { loginUser } from "../app/login/action"
-import { useToast } from "@/hooks/use-toast"
+import { toast } from "@/hooks/use-toast"
 import Link from 'next/link'
-import GoogleSignin from '../app/login/GoogleSignin'
+import { FcGoogle } from 'react-icons/fc'
+import { createClient } from '@/utils/supabase/client'
 
 const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(6),
+  email: z.string().email({
+    message: "Please enter a valid email address.",
+  }),
+  password: z.string().min(1, {
+    message: "Password is required.",
+  }),
 })
 
-const LoginForm = () => {
+export function LoginForm() {
   const router = useRouter()
-  const { toast } = useToast()
-  const [serverError, setServerError] = React.useState<string | null>(null)
-  const [isLoading, setIsLoading] = React.useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [serverError, setServerError] = useState<string | null>(null)
+  const supabase = createClient()
 
   const form = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
@@ -195,49 +233,75 @@ const LoginForm = () => {
     },
   })
 
-  const onSubmit = async (values: z.infer<typeof loginSchema>) => {
-    setServerError(null);
-    setIsLoading(true);
+  async function onSubmit(values: z.infer<typeof loginSchema>) {
+    setIsLoading(true)
+    setServerError(null)
     try {
-      const formData = new FormData();
-      formData.append('email', values.email);
-      formData.append('password', values.password);
-      
-      const response = await loginUser(formData);
+      const { error } = await supabase.auth.signInWithPassword({
+        email: values.email,
+        password: values.password,
+      })
 
-      if ('success' in response && response.success) {
-        toast({
-          title: "Logged in successfully",
-          description: "Redirecting to dashboard...",
-        });
-        
-        // Redirect based on user role
-        const role = response.user.role;
-        switch (role) {
-          case 'SUPER_ADMIN':
-            router.push('/admin');
-            break;
-          case 'CENTER_ADMIN':
-          case 'WAREHOUSE_STAFF':
-          case 'LOGISTICS_COORDINATOR':
-            router.push('/center');
-            break;
-          default:
-            router.push('/dashboard');
-        }
-      } else {
-        throw new Error(response.message || 'An error occurred during login');
+      if (error) {
+        setServerError(error.message)
+        setIsLoading(false)
+        return
+      }
+
+      // Fetch user role
+      const { data: userData, error: roleError } = await supabase
+        .from('users')
+        .select('role')
+        .single()
+
+      if (roleError) throw new Error('Failed to fetch user role')
+
+      toast({
+        title: "Logged in successfully",
+        description: "Redirecting to dashboard...",
+      })
+      
+      // Redirect based on user role
+      switch (userData.role) {
+        case 'ADMIN':
+          router.push('/admin')
+          break
+        case 'CENTER_USER':
+          router.push('/center')
+          break
+        case 'USER':
+        default:
+          router.push('/dashboard')
+          break
       }
     } catch (error) {
       toast({
         title: "Error",
         description: error instanceof Error ? error.message : "An unexpected error occurred",
         variant: "destructive",
-      });
+      })
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
+
+  const handleGoogleSignIn = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`
+        }
+      })
+      if (error) throw error
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "An unexpected error occurred",
+        variant: "destructive",
+      })
+    }
+  }
 
   return (
     <Form {...form}>
@@ -268,11 +332,25 @@ const LoginForm = () => {
             </FormItem>
           )}
         />
-        {serverError && <p className="text-red-500 text-sm mt-2">{serverError}</p>}
+        
+        {serverError && (
+          <div className="text-red-600 text-sm">{serverError}</div>
+        )}
+    
         <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white" disabled={isLoading}>
           {isLoading ? "Logging in..." : "Login"}
         </Button>
-        <GoogleSignin />
+        <div className="mt-4">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleGoogleSignIn}
+            className="w-full"
+          >
+            <FcGoogle className="w-5 h-5 mr-2" />
+            Sign in with Google
+          </Button>
+        </div>
       </form>
       <div className="mt-6 text-center">
         <p className="text-gray-600">

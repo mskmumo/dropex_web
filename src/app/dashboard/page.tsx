@@ -1,156 +1,131 @@
-// import { cookies } from 'next/headers'
-
-// import { redirect } from 'next/navigation'
-// import { Card, CardDescription, CardTitle } from '@/components/ui/card'
-// import { Button } from '@/components/ui/button'
 "use client"
 
-import jwt from 'jsonwebtoken'
-import { PaymentsSection } from '@/components/dashboard/payments-section'
-// import { QuickActionsSection } from '@/components/dashboard/quick-actions-section'
-import Head from 'next/head'
-// import { useState, useEffect } from 'react'
-import { useDropzone } from 'react-dropzone'
-// import { loadStripe } from '@stripe/stripe-js'
-// import { Elements } from '@react-stripe-js'
-import PaymentForm from '@/components/dashboard/payment-form'
-import { OnlineOrdersSection } from '@/components/dashboard/online-orders-section';
-import { GoogleMap, LoadScript, Marker } from '@react-google-maps/api';
 import { useEffect, useState } from 'react'
-import { redirect } from 'next/navigation'
-// import  cookies  from 'next/headers'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+// import { Overview } from '@/components/dashboard/overview'
+// import { RecentOrders } from '@/components/dashboard/recent-orders'
+import { Button } from '@/components/ui/button'
+import Link from 'next/link'
+// import { ParcelTrackingSection } from '@/components/dashboard/parcel-tracking-section'
+import { PaymentsSection } from '@/components/dashboard/payments-section'
+import { QuickActionsSection } from '@/components/dashboard/quick-actions-section'
+import { OnlineOrdersSection } from '@/components/dashboard/online-orders-section'
+// import { useToast } from "@/components/ui/use-toast"
+import { createClient } from '@/utils/supabase/client'
+import { useToast } from '@/hooks/use-toast'
 
-interface Location {
-  lat: number;
-  lng: number;
-}
+export default function DashboardPage() {
+  interface DashboardData {
+    parcels: { length: number }[];
+    auctions: { length: number }[];
+    tasks: { status: string }[];
+    shipments: { status: string }[];
+  }
 
-interface ParcelTrackingSectionProps {
-  parcelLocation: Location;
-}
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
+  const { toast } = useToast()
+  const supabase = createClient()
 
-const defaultLocation = {
-  lat: 0,
-  lng: 0
-};
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) throw new Error('No user found')
 
-const mapContainerStyle = {
-  width: '100%',
-  height: '400px'
-};
+        const response = await fetch(`/api/dashboard?userId=${user.id}`)
+        if (!response.ok) throw new Error('Failed to fetch dashboard data')
 
+        const data = await response.json()
+        setDashboardData(data)
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error)
+        toast({
+          title: "Error",
+          description: "Failed to load dashboard data. Please try again.",
+          variant: "destructive",
+        })
+      }
+    }
 
-export function ParcelTrackingSection({ parcelLocation = defaultLocation }: ParcelTrackingSectionProps) {
-  const [map, setMap] = useState<google.maps.Map | null>(null);
+    fetchDashboardData()
+  }, [supabase.auth, toast])
 
+  if (!dashboardData) {
+    return <div>Loading...</div>
+  }
 
   return (
-    <div className="tracking-section">
-      <h2 className="text-2xl font-bold mb-4">Parcel Tracking</h2>
-      <LoadScript googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!}>
-        <GoogleMap
-          mapContainerStyle={mapContainerStyle}
-          center={parcelLocation}
-          zoom={12}
-          onLoad={map => setMap(map)}
-        >
-          <Marker position={parcelLocation} />
-        </GoogleMap>
-      </LoadScript>
-      
-      <div className="mt-4">
-        <p>Current Location:</p>
-        <p>Latitude: {parcelLocation.lat}</p>
-        <p>Longitude: {parcelLocation.lng}</p>
+    <div className="p-6 space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+        <Button asChild>
+          <Link href="/dashboard/parcels/create">Create New Parcel</Link>
+        </Button>
       </div>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Parcels</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{dashboardData.parcels.length}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Active Auctions</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{dashboardData.auctions.length}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Pending Tasks</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {dashboardData.tasks.filter(task => task.status === 'pending').length}
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Active Shipments</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {dashboardData.shipments.filter(shipment => shipment.status === 'in_transit').length}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+        <Card className="col-span-4">
+          <CardHeader>
+            <CardTitle>Overview</CardTitle>
+          </CardHeader>
+          <CardContent className="pl-2">
+            {/* <Overview data={dashboardData} /> */}
+          </CardContent>
+        </Card>
+        <Card className="col-span-3">
+          <CardHeader>
+            <CardTitle>Recent Orders</CardTitle>
+            <CardDescription>You have {dashboardData.parcels.length} total orders</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {/* <RecentOrders parcels={dashboardData.parcels.slice(0, 5)} /> */}
+          </CardContent>
+        </Card>
+      </div>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {/* <ParcelTrackingSection parcels={dashboardData.parcels} /> */}
+        <PaymentsSection />
+        <QuickActionsSection />
+      </div>
+      <OnlineOrdersSection />
     </div>
-  );
-}
-
-// const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
-// Removed unused GOOGLE_MAPS_API_KEY variable
-
-// export async function getAuthData() {
-//   const cookieStore = cookies()
-//   return {
-//     token: cookieStore.get('token')?.value,
-//     // other cookie data you need
-//   }
-// }
-
-export default function CustomerDashboard() {
-  const [files, setFiles] = useState<Array<{ name: string; preview: string }>>([])
-  const [parcelLocation] = useState<Location>({ lat: 40.7128, lng: -74.0060 })
-
-  const { getRootProps, getInputProps } = useDropzone({
-    accept: { 'image/*': [] },
-    onDrop: acceptedFiles => {
-      setFiles(acceptedFiles.map(file => Object.assign(file, {
-        preview: URL.createObjectURL(file)
-      })))
-    }
-  })
-
-  useEffect(() => {
-    return () => files.forEach(file => URL.revokeObjectURL(file.preview))
-  }, [files])
-
-  useEffect(() => {
-    const checkToken = async () => {
-      const token = (await cookies()).get('token')?.value
-
-      if (!token) {
-        redirect('/login')
-      }
-
-      const decodedToken = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string, role: string }
-
-      if (decodedToken.role !== 'CUSTOMER') {
-        redirect('/admin')
-      }
-    }
-
-    checkToken()
-  }, [])
-
-  return (
-    <>
-      <Head>
-        <title>Customer Dashboard - Dropex</title>
-        <meta name="description" content="Manage your orders, track parcels, and participate in auctions." />
-      </Head>
-      <div className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <ParcelTrackingSection parcelLocation={parcelLocation} />
-          <PaymentsSection />
-          {/* <QuickActionsSection /> */}
-        </div>
-        <div className="mt-8">
-          <h2 className="text-2xl font-bold mb-4">Online Orders</h2>
-          <OnlineOrdersSection />
-        </div>
-        <div className="mt-8">
-          <h2 className="text-2xl font-bold mb-4">File Upload</h2>
-          <div {...getRootProps()} className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-            <input {...getInputProps()} />
-            <p>Drag &apos;n&apos; drop some files here, or click to select files</p>
-          </div>
-          <div className="mt-4 flex flex-wrap">
-            {files.map(file => (
-              <div key={file.name} className="m-2">
-                <img src={file.preview} alt={file.name} style={{ width: '100px', height: '100px' }} />
-              </div>
-            ))}
-          </div>
-        </div>
-        <div className="mt-8">
-          <h2 className="text-2xl font-bold mb-4">Payment</h2>
-          {/* <Elements stripe={stripePromise}>
-            <PaymentForm />
-          </Elements> */}
-        </div>
-      </div>
-    </>
   )
 }
 
