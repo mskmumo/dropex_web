@@ -17,9 +17,13 @@ import {
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import { toast } from '@/components/ui/use-toast'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 
 const profileSchema = z.object({
+  name: z.string().min(2, { message: "Name must be at least 2 characters." }),
   email: z.string().email({ message: "Please enter a valid email address." }),
+  country: z.string().min(2, { message: "Please select a country." }),
+  countryCode: z.string().min(2, { message: "Please select a country code." }),
   phone: z.string().min(5, { message: "Phone number must be at least 5 characters." }),
   password: z.string().min(8, { message: "Password must be at least 8 characters." }).optional(),
   confirmPassword: z.string().optional(),
@@ -37,29 +41,42 @@ const profileSchema = z.object({
 
 export function ProfileSection({ user }) {
   const [isLoading, setIsLoading] = useState(false)
+  const supabase = createClientComponentClient()
 
   const form = useForm<z.infer<typeof profileSchema>>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
+      name: user.name,
       email: user.email,
+      country: user.country,
+      countryCode: user.country_code,
       phone: user.phone,
-      twoFactorEnabled: user.twoFactorEnabled,
+      twoFactorEnabled: user.two_factor_enabled,
     },
   })
 
   async function onSubmit(values: z.infer<typeof profileSchema>) {
     setIsLoading(true)
     try {
-      const response = await fetch('/api/center/update-profile', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(values),
-      })
+      const { data, error } = await supabase
+        .from('users')
+        .update({
+          name: values.name,
+          email: values.email,
+          country: values.country,
+          country_code: values.countryCode,
+          phone: values.phone,
+          two_factor_enabled: values.twoFactorEnabled,
+        })
+        .eq('id', user.id)
 
-      if (!response.ok) {
-        throw new Error('Failed to update profile')
+      if (error) throw error
+
+      if (values.password) {
+        const { error: passwordError } = await supabase.auth.updateUser({
+          password: values.password,
+        })
+        if (passwordError) throw passwordError
       }
 
       toast({
@@ -82,12 +99,51 @@ export function ProfileSection({ user }) {
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
         <FormField
           control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Full Name</FormLabel>
+              <FormControl>
+                <Input {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
           name="email"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Email</FormLabel>
               <FormControl>
                 <Input type="email" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="country"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Country</FormLabel>
+              <FormControl>
+                <Input {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="countryCode"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Country Code</FormLabel>
+              <FormControl>
+                <Input {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>

@@ -1,62 +1,29 @@
-// import { type NextRequest } from 'next/server'
-// import { updateSession } from '@/utils/supabase/middleware'
-
-// export async function middleware(request: NextRequest) {
-//   return await updateSession(request)
-// }
-
-// export const config = {
-//   matcher: [
-//     /*
-//      * Match all request paths except for the ones starting with:
-//      * - _next/static (static files)
-//      * - _next/image (image optimization files)
-//      * - favicon.ico (favicon file)
-//      * Feel free to modify this pattern to include more paths.
-//      */
-//     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
-//   ],
-// }
-
-import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { getUser } from './lib/auth'
 
-export async function middleware(req: NextRequest) {
-  const res = NextResponse.next()
-  const supabase = createMiddlewareClient({ req, res })
+export async function middleware(request: NextRequest) {
+  const token = request.cookies.get('token')?.value
 
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
-
-  if (!session) {
-    return NextResponse.redirect(new URL('/login', req.url))
+  if (!token) {
+    return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  // Fetch user role
-  const { data: userData } = await supabase
-    .from('users')
-    .select('role')
-    .eq('id', session.user.id)
-    .single()
+  const user = await getUser(token)
 
-  const role = userData?.role
-
-  // Check if the user is accessing the correct dashboard based on their role
-  if (req.nextUrl.pathname.startsWith('/admin') && role !== 'ADMIN') {
-    return NextResponse.redirect(new URL('/dashboard', req.url))
+  if (!user) {
+    return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  if (req.nextUrl.pathname.startsWith('/center') && role !== 'CENTER') {
-    return NextResponse.redirect(new URL('/dashboard', req.url))
+  if (request.nextUrl.pathname.startsWith('/admin') && user.role !== 'SUPER_ADMIN') {
+    return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
-  if (req.nextUrl.pathname.startsWith('/dashboard') && (role === 'ADMIN' || role === 'CENTER')) {
-    return NextResponse.redirect(new URL(`/${role.toLowerCase()}`, req.url))
+  if (request.nextUrl.pathname.startsWith('/center') && !['CENTER_ADMIN', 'WAREHOUSE_STAFF', 'LOGISTICS_COORDINATOR'].includes(user.role)) {
+    return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
-  return res
+  return NextResponse.next()
 }
 
 export const config = {

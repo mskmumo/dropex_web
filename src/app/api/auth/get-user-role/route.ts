@@ -1,29 +1,32 @@
-'use server'
+import { NextResponse } from 'next/server';
+import { query } from '@/lib/database';
 
-import { createClient } from '@/utils/supabase/server'
-
-export async function getUserRole() {
-  const supabase = createClient()
-
-  try {
-    const { data: { user } } = await (await supabase).auth.getUser()
-
-    if (!user) {
-      throw new Error('User not found')
-    }
-
-    const { data, error } = await (await supabase)
-      .from('users')
-      .select('role')
-      .eq('id', user.id)
-      .single()
-
-    if (error) throw error
-
-    return data.role
-  } catch (error) {
-    console.error('Error fetching user role:', error)
-    throw error
-  }
+export async function getUserRole(userId: string) {
+	try {
+		const { rows } = await query(
+			'SELECT role FROM users WHERE id = $1',
+			[userId]
+		);
+		return rows[0]?.role || null;
+	} catch (err) {
+		console.error('Error getting user role:', err);
+		return null;
+	}
 }
 
+export async function GET(req: Request) {
+	try {
+		const { searchParams } = new URL(req.url);
+		const userId = searchParams.get('userId');
+
+		if (!userId) {
+			return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
+		}
+
+		const role = await getUserRole(userId);
+		return NextResponse.json({ role });
+	} catch (err) {
+		console.error('Error in get-user-role route:', err);
+		return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+	}
+}

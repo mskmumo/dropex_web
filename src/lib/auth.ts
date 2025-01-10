@@ -1,22 +1,24 @@
-import { sign, verify } from 'jsonwebtoken'
-import { hash, compare } from 'bcryptjs'
+import { jwtVerify } from 'jose'
 
-export async function hashPassword(password: string) {
-  return await hash(password, 10)
+export async function getUser(token: string) {
+  try {
+    const { payload } = await jwtVerify(token, new TextEncoder().encode(process.env.JWT_SECRET))
+    return payload
+  } catch (error) {
+    return null
+  }
 }
 
-export async function comparePasswords(password: string, hashedPassword: string) {
-  return await compare(password, hashedPassword)
+export function redirectBasedOnRole(role: string) {
+  switch (role) {
+    case 'SUPER_ADMIN':
+      return '/admin'
+    case 'CENTER_ADMIN':
+    case 'WAREHOUSE_STAFF':
+    case 'LOGISTICS_COORDINATOR':
+      return '/center'
+    default:
+      return '/dashboard'
+  }
 }
 
-export function generateToken(userId: string) {
-  return sign(
-    { userId },
-    process.env.JWT_SECRET || 'fallback-secret-key',
-    { expiresIn: '7d' }
-  )
-}
-
-export function verifyToken(token: string) {
-  return verify(token, process.env.JWT_SECRET || 'fallback-secret-key')
-}

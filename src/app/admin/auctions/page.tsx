@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Table } from '@/components/ui/table'
+import { Table, TableHead } from '@/components/ui/table'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { 
@@ -69,11 +69,11 @@ export default function AuctionManagement() {
                 Title <ArrowUpDown className="ml-2 h-4 w-4" />
               </Button>
             </Table.Head>
-            <Table.Head>
+            <TableHead>
               <Button variant="ghost" onClick={() => handleSort('seller')}>
                 Seller <ArrowUpDown className="ml-2 h-4 w-4" />
               </Button>
-            </Table.Head>
+            </TableHead>
             <Table.Head>
               <Button variant="ghost" onClick={() => handleSort('currentBid')}>
                 Current Bid <ArrowUpDown className="ml-2 h-4 w-4" />

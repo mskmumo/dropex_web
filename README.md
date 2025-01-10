@@ -199,3 +199,62 @@ export async function GET(req: Request) {
   }
 }
 
+// ... (previous imports remain the same)
+
+const registerSchema = z.object({
+  // ... (other fields remain the same)
+  role: z.enum(["USER", "ADMIN", "CENTER_USER"]),
+  // ... (other fields remain the same)
+})
+
+export function AuthForm() {
+  // ... (previous code remains the same)
+
+  async function onSubmit(values: z.infer<typeof registerSchema>) {
+    setIsLoading(true)
+    setServerError(null)
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: values.email,
+        password: values.password,
+        options: {
+          data: {
+            name: values.name,
+            country: values.country,
+            country_code: values.countryCode,
+            phone: values.phone,
+            role: values.role,
+            agreement: values.agreement,
+          },
+        },
+      })
+
+      if (error) throw error
+
+      // Insert user data into the users table
+      const { error: insertError } = await supabase
+        .from('users')
+        .insert({
+          id: data.user?.id,
+          email: values.email,
+          name: values.name,
+          country: values.country,
+          country_code: values.countryCode,
+          phone: values.phone,
+          role: values.role,
+        })
+
+      if (insertError) throw insertError
+
+      setShowVerificationDialog(true)
+    } catch (error) {
+      console.error('Registration error:', error)
+      setServerError(error instanceof Error ? error.message : "An unexpected error occurred")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // ... (rest of the component remains the same)
+}
+

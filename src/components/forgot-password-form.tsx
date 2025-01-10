@@ -1,10 +1,10 @@
 "use client"
 
 import { useState } from 'react'
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import * as z from "zod"
-import { Button } from "@/components/ui/button"
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import * as z from 'zod'
+import { Button } from '@/components/ui/button'
 import {
   Form,
   FormControl,
@@ -12,11 +12,10 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { Toast } from "@/components/ui/toast"
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-// import { supabase } from '@/lib/supabase'
+} from '@/components/ui/form'
+import { Input } from '@/components/ui/input'
+import { toast } from '@/components/ui/use-toast'
+import Link from 'next/link'
 
 const forgotPasswordSchema = z.object({
   email: z.string().email({
@@ -24,9 +23,8 @@ const forgotPasswordSchema = z.object({
   }),
 })
 
-export function ForgotPasswordForm() {
+export default function ForgotPasswordPage() {
   const [isLoading, setIsLoading] = useState(false)
-  const supabase = createClientComponentClient()
 
   const form = useForm<z.infer<typeof forgotPasswordSchema>>({
     resolver: zodResolver(forgotPasswordSchema),
@@ -38,15 +36,21 @@ export function ForgotPasswordForm() {
   async function onSubmit(values: z.infer<typeof forgotPasswordSchema>) {
     setIsLoading(true)
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(values.email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+      const response = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(values),
       })
 
-      if (error) throw error
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'An error occurred')
+      }
 
       toast({
         title: "Password reset email sent",
-        description: "Please check your email for further instructions.",
+        description: "If an account with that email exists, you will receive a password reset link.",
       })
     } catch (error) {
       toast({
@@ -60,26 +64,40 @@ export function ForgotPasswordForm() {
   }
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <FormField
-          control={form.control}
-          name="email"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Email</FormLabel>
-              <FormControl>
-                <Input placeholder="Enter your email" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <Button type="submit" className="w-full" disabled={isLoading}>
-          {isLoading ? 'Sending...' : 'Send Reset Link'}
-        </Button>
-      </form>
-    </Form>
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-r from-navy-600 to-navy-800">
+      <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-lg shadow-2xl">
+        <div className="text-center">
+          <h2 className="mt-6 text-3xl font-extrabold text-navy-900">Forgot Password</h2>
+          <p className="mt-2 text-sm text-navy-600">
+            Enter your email address and we'll send you a link to reset your password.
+          </p>
+        </div>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-navy-600">Email</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter your email" {...field} className="border-navy-300 focus:border-navy-500" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <Button type="submit" className="w-full bg-navy-600 hover:bg-navy-700 text-white" disabled={isLoading}>
+              {isLoading ? "Sending..." : "Send Reset Link"}
+            </Button>
+          </form>
+        </Form>
+        <div className="text-center">
+          <Link href="/login" className="text-sm text-navy-600 hover:underline">
+            Back to Login
+          </Link>
+        </div>
+      </div>
+    </div>
   )
 }
-
